@@ -21,16 +21,25 @@ API_KEY = os.getenv("API_KEY")
 API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-async def verify_api_key(api_key: str = Security(API_KEY_HEADER)) -> str:
-    """Verifica se a API Key é válida."""
+async def verify_api_key(
+    api_key_header: str = Security(API_KEY_HEADER),
+    api_key_query: Optional[str] = Query(None, alias="api_key", description="API Key (alternativa ao header)"),
+) -> str:
+    """
+    Verifica se a API Key é válida.
+    Aceita a chave via header 'X-API-Key' ou query parameter 'api_key'.
+    """
     if not API_KEY:
         # Se API_KEY não estiver configurada, permite acesso (dev mode)
         return "dev-mode"
     
+    # Usa a chave do header ou da query string
+    api_key = api_key_header or api_key_query
+    
     if not api_key:
         raise HTTPException(
             status_code=401,
-            detail="API Key não fornecida. Use o header 'X-API-Key'.",
+            detail="API Key não fornecida. Use o header 'X-API-Key' ou query parameter 'api_key'.",
         )
     
     # Comparação segura contra timing attacks
